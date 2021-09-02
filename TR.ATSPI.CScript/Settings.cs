@@ -24,6 +24,8 @@ namespace TR.ATSPI.CScript
 
 	public class ScriptPathListClass : ISettings<string>
 	{
+		[System.Xml.Serialization.XmlIgnore]
+		public string CurrentScriptFileListPath { get; set; } = string.Empty;
 		public List<string> ScriptFileLists { get; set; } = new();
 		public List<string> LoadScripts { get; set; } = new();
 		public List<string> DisposeScripts { get; set; } = new();
