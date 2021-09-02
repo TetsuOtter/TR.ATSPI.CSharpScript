@@ -126,6 +126,7 @@ namespace TR.ATSPI.CScript
 			if (listFile is null)
 				return;
 
+			listFile.CurrentScriptFileListPath = path;
 			ScriptFileLists.Add(listFile);
 
 			if (listFile.ScriptFileLists is null || listFile.ScriptFileLists.Count <= 0)
@@ -150,7 +151,8 @@ namespace TR.ATSPI.CScript
 					//絶対パスに変換する
 					string scriptString = string.Empty;
 
-					using (StreamReader sr = new(Path.IsPathRooted(s) ? s : Path.Combine(CurrentDllDirectoryPath, s)))
+					//相対パスは, スクリプトファイルリストからの相対パスとして絶対パスに変換する
+					using (StreamReader sr = new(Path.IsPathRooted(s) ? s : Path.Combine(Path.GetDirectoryName(source.CurrentScriptFileListPath), s)))
 						scriptString = sr.ReadToEnd();
 
 					targetList.Add(CreateActionFromScriptString(scriptString));
