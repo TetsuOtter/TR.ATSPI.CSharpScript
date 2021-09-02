@@ -55,18 +55,13 @@ namespace TR.ATSPI.CScript
 		/// <returns></returns>
 		public bool LoadScriptPathListsAndScripts()
 		{
-			Debug.WriteLine(nameof(LoadScriptPathListsAndScripts) + "() ====================");
-
 			//設定ファイルを読み込む => XML
 			// C:\abcDef\TR.ATSPI.CScript.xml
 			string rootSettingFilePath = Path.Combine(CurrentDllDirectoryPath, CurrentDllFileNameWithoutExtension + ".xml");
 
-			Debug.WriteLine(rootSettingFilePath);
-
 			//ルートとなる設定ファイルが存在する場合のみ, 読み込みを実行
 			if (File.Exists(rootSettingFilePath))
 			{
-				Debug.WriteLine("XML Found");
 				try
 				{
 					//スクリプトファイルリストを読み込む
@@ -108,12 +103,10 @@ namespace TR.ATSPI.CScript
 			}
 			else
 			{
-				Debug.WriteLine("XML Not found");
-
 				//XMLのタグのみが含まれたファイルを書き出す
 				using StreamWriter sw = File.CreateText(rootSettingFilePath);
 				ScriptPathListClass splc = new();
-				splc.ElapseScripts.Add("abc.txt");
+
 				Serializer.Serialize(sw, splc);
 
 				//スクリプトのロードには失敗しているため
