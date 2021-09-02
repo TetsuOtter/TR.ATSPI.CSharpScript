@@ -81,13 +81,12 @@ namespace TR.ATSPI.CScript
 		[DllExport(CallingConvention = CallingConvention.StdCall)]
 		public static void Load()
 		{
-			Debug.WriteLine("Load method");
 			pi = new();
 
 			//スクリプトをロードできなければ, 以降何も実行しない
 			if(!pi.LoadScriptPathListsAndScripts())
 				pi = null;
-			Debug.WriteLine($"Load()...pi:{pi}");
+
 			pi?.Load();
 		}
 
