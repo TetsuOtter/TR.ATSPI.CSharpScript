@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace TR.ATSPI.CScript
 {
-	public unsafe class GlobalVariable
+	public class GlobalVariable
 	{
 		public Dictionary<string, object> ObjectHolder { get; internal set; } = new();
 
@@ -25,8 +26,8 @@ namespace TR.ATSPI.CScript
 		public float BPPressure { get; internal set; }
 		public float SAPPressure { get; internal set; }
 		public float Current { get; internal set; }
-		public int* Panel { get; internal set; }
-		public int* Sound { get; internal set; }
+		public UnmanagedArray Panel { get; internal set; } = new(IntPtr.Zero);
+		public UnmanagedArray Sound { get; internal set; } = new(IntPtr.Zero);
 		#endregion
 
 		#region SetBeaconData
@@ -79,8 +80,8 @@ namespace TR.ATSPI.CScript
 			SAPPressure = state.SAPPressure;
 			Current = state.Current;
 
-			Panel = (int*)panel;
-			Sound = (int*)sound;
+			Panel = new(panel);
+			Sound = new(sound);
 
 			BrakePosReturn = SetBrakeArg;
 			PowerPosReturn = SetPowerArg;
@@ -107,5 +108,27 @@ namespace TR.ATSPI.CScript
 				ReverserPos = ReverserPosReturn,
 				ConstSpeedStatus = ConstSpeedStateReturn
 			};
+
+		public record UnmanagedArray(IntPtr IntPtr)
+		{
+			public int this[int index]
+			{
+				get => Marshal.ReadInt32(IntPtr, index * sizeof(int));
+				set => Marshal.WriteInt32(IntPtr, index * sizeof(int), value);
+			}
+		}
 	}
 }
+
+#if NETFRAMEWORK
+// ref : https://ufcpp.net/blog/2020/6/cs9vs16_7p3/
+// IsExternalInit属性
+
+namespace System.Runtime.CompilerServices
+{
+	internal class IsExternalInit
+	{
+
+	}
+}
+#endif
