@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.CodeAnalysis.Scripting.Hosting;
 
 using System;
 using System.Collections.Generic;
@@ -151,12 +152,13 @@ namespace TR.ATSPI.CScript
 				{
 					//絶対パスに変換する
 					string scriptString = string.Empty;
+					string scriptFilePath = Path.IsPathRooted(s) ? s : Path.Combine(Path.GetDirectoryName(source.CurrentScriptFileListPath), s);
 
 					//相対パスは, スクリプトファイルリストからの相対パスとして絶対パスに変換する
-					using (StreamReader sr = new(Path.IsPathRooted(s) ? s : Path.Combine(Path.GetDirectoryName(source.CurrentScriptFileListPath), s)))
+					using (StreamReader sr = new(scriptFilePath))
 						scriptString = sr.ReadToEnd();
 
-					targetList.Add(CreateActionFromScriptString(scriptString));
+					targetList.Add(CreateActionFromScriptString(scriptString, scriptFilePath));
 				}
 			}
 		}
@@ -180,9 +182,9 @@ namespace TR.ATSPI.CScript
 			LoadScriptsFromPathList(GetPluginVersionScripts, v => v.GetPluginVersionScripts);
 		}
 
-		public static Func<GlobalVariable, Task> CreateActionFromScriptString(in string scriptString)
+		public static Func<GlobalVariable, Task> CreateActionFromScriptString(in string scriptString, in string scriptFilePath = "")
 		{
-			var scriptRunner = CSharpScript.Create(scriptString, UsingScriptOptions, typeof(GlobalVariable));
+			var scriptRunner = CSharpScript.Create(scriptString, UsingScriptOptions.WithSourceResolver(new MySourceReferenceResolver(scriptFilePath)).WithMetadataResolver(new MyMetadataReferenceResolver(scriptFilePath)), typeof(GlobalVariable));
 
 			scriptRunner.Compile(); //先にコンパイルを行う
 
