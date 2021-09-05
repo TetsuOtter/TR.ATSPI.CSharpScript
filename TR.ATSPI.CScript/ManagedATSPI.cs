@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Scripting;
 
 using System;
@@ -25,7 +26,7 @@ namespace TR.ATSPI.CScript
 			"System.Threading.Tasks"
 		};
 
-		static ScriptOptions UsingScriptOptions { get; } = ScriptOptions.Default.WithAllowUnsafe(true).WithImports(ScriptsImports);
+		static ScriptOptions UsingScriptOptions { get; } = ScriptOptions.Default.WithAllowUnsafe(true).WithImports(ScriptsImports).WithOptimizationLevel(OptimizationLevel.Release);
 		static XmlSerializer Serializer { get; } = new XmlSerializer(typeof(ScriptPathListClass));
 
 		public List<ScriptPathListClass> ScriptFileLists { get; } = new();
