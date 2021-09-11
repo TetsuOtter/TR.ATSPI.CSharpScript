@@ -58,7 +58,7 @@ namespace TR.ATSPI.CScript
 		public bool LoadScriptPathListsAndScripts()
 		{
 			//設定ファイルを読み込む => XML
-			// C:\abcDef\TR.ATSPI.CScript.xml
+			// C:\abcDef\TR.ATSPI.CSharpScript.xml
 			string rootSettingFilePath = Path.Combine(CurrentDllDirectoryPath, CurrentDllFileNameWithoutExtension + ".xml");
 
 			//ルートとなる設定ファイルが存在する場合のみ, 読み込みを実行
