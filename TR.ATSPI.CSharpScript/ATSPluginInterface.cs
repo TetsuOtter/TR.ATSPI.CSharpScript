@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 
-namespace TR.ATSPI.CScript
+namespace TR.ATSPI.CSharpScript
 {
 	public static class ATSPluginInterface
 	{

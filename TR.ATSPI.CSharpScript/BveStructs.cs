@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace TR.ATSPI.CScript
+namespace TR.ATSPI.CSharpScript
 {
 	/// <summary>車両のスペック</summary>
 	[StructLayout(LayoutKind.Sequential)]

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace TR.ATSPI.CScript
+namespace TR.ATSPI.CSharpScript
 {
 	public interface ISettings<T>
 	{

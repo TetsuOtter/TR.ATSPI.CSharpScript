@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TR.ATSPI.CScript\TR.ATSPI.CScript.csproj" />
+    <ProjectReference Include="..\TR.ATSPI.CSharpScript\TR.ATSPI.CSharpScript.csproj" />
   </ItemGroup>
 
 </Project>

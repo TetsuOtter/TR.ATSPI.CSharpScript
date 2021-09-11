@@ -3,7 +3,7 @@
 using System;
 using System.IO;
 
-namespace TR.ATSPI.CScript
+namespace TR.ATSPI.CSharpScript
 {
 	public class MySourceReferenceResolver : SourceReferenceResolver
 	{
