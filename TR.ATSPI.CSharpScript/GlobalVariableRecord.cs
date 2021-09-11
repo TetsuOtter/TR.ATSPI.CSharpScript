@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace TR.ATSPI.CScript
+namespace TR.ATSPI.CSharpScript
 {
 	public class GlobalVariable
 	{

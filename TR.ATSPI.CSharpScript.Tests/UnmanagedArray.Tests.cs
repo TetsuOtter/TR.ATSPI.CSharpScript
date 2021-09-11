@@ -3,7 +3,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace TR.ATSPI.CScript.Tests
+namespace TR.ATSPI.CSharpScript.Tests
 {
 	public class UnmanagedArrayTests
 	{

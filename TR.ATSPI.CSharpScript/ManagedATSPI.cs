@@ -12,7 +12,7 @@ using System.Xml.Serialization;
 
 using System.Diagnostics;
 
-namespace TR.ATSPI.CScript
+namespace TR.ATSPI.CSharpScript
 {
 	public sealed class ManagedATSPI : IDisposable, ISettings<Func<GlobalVariable, Task>>
 	{
@@ -184,7 +184,7 @@ namespace TR.ATSPI.CScript
 
 		public static Func<GlobalVariable, Task> CreateActionFromScriptString(in string scriptString, in string scriptFilePath = "")
 		{
-			var scriptRunner = CSharpScript.Create(scriptString, UsingScriptOptions.WithSourceResolver(new MySourceReferenceResolver(scriptFilePath)).WithMetadataResolver(new MyMetadataReferenceResolver(scriptFilePath)), typeof(GlobalVariable));
+			var scriptRunner = Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.Create(scriptString, UsingScriptOptions.WithSourceResolver(new MySourceReferenceResolver(scriptFilePath)).WithMetadataResolver(new MyMetadataReferenceResolver(scriptFilePath)), typeof(GlobalVariable));
 
 			scriptRunner.Compile(); //先にコンパイルを行う
 

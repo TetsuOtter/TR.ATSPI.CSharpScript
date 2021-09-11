@@ -2,7 +2,7 @@ using NUnit.Framework;
 
 using System.Threading.Tasks;
 
-namespace TR.ATSPI.CScript.Tests
+namespace TR.ATSPI.CSharpScript.Tests
 {
 	public class ManagedATSPITests
 	{
