@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31612.314
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TR.ATSPI.CScript", "TR.ATSPI.CScript\TR.ATSPI.CScript.csproj", "{37F0FA70-4D45-4C83-A07B-ABE50E38441F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TR.ATSPI.CSharpScript", "TR.ATSPI.CScript\TR.ATSPI.CSharpScript.csproj", "{37F0FA70-4D45-4C83-A07B-ABE50E38441F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TR.ATSPI.CScript.Tests", "TR.ATSPI.CScript.Tests\TR.ATSPI.CScript.Tests.csproj", "{3DF6E543-6047-4392-B07B-F1E05430C402}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TR.ATSPI.CSharpScript.Tests", "TR.ATSPI.CScript.Tests\TR.ATSPI.CSharpScript.Tests.csproj", "{3DF6E543-6047-4392-B07B-F1E05430C402}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
