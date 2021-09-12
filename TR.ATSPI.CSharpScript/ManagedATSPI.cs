@@ -22,8 +22,26 @@ namespace TR.ATSPI.CSharpScript
 			"System.Collections.Generic",
 			"System.Threading.Tasks"
 		};
+		static Assembly[] ScriptReferences { get; } = new Assembly[]
+		{
+			typeof(object).Assembly,
+			typeof(System.IO.File).Assembly,
+			typeof(System.Collections.Generic.Dictionary<object, object>).Assembly,
+			typeof(System.Threading.Tasks.Task).Assembly,
+			typeof(System.Diagnostics.Debugger).Assembly
+		};
 
-		static ScriptOptions UsingScriptOptions { get; } = ScriptOptions.Default.WithAllowUnsafe(true).WithImports(ScriptsImports).WithOptimizationLevel(OptimizationLevel.Release);
+		static ScriptOptions UsingScriptOptions { get; }
+			= ScriptOptions.Default
+				.WithAllowUnsafe(true)
+				.WithFileEncoding(System.Text.Encoding.UTF8)
+				.WithImports(ScriptsImports)
+				.WithReferences(ScriptReferences)
+				.WithOptimizationLevel(OptimizationLevel.Release)
+				.WithEmitDebugInformation(false)
+				.WithSourceResolver(ScriptSourceResolver.Default.WithBaseDirectory(CurrentDllDirectoryPath))
+				.WithMetadataResolver(ScriptMetadataResolver.Default.WithBaseDirectory(CurrentDllDirectoryPath));
+
 		static XmlSerializer Serializer { get; } = new XmlSerializer(typeof(ScriptPathListClass));
 
 		public List<ScriptPathListClass> ScriptFileLists { get; } = new();
