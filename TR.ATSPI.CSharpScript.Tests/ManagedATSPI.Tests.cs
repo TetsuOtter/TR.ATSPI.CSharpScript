@@ -14,6 +14,11 @@ namespace TR.ATSPI.CSharpScript.Tests
 		{
 			var func = ManagedATSPI.CreateActionFromScriptString(CreateActionFromScriptStringTest_Script);
 
+			Assert.IsNotNull(func);
+
+			if (func is null)
+				return;
+
 			GlobalVariable gv = new();
 			gv.BrakePosReturn = 20;
 			await func.Invoke(gv);
