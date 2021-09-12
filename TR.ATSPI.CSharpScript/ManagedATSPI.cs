@@ -218,16 +218,39 @@ namespace TR.ATSPI.CSharpScript
 		}
 
 		public static Func<GlobalVariable, Task>? CreateActionFromScriptString(in string scriptString, in string scriptFilePath = "")
+		public static Func<GlobalVariable, Task>? CreateActionFromScriptString(in string scriptString, in string scriptFilePath, bool IsDebug = false)
 		{
-			string scriptFileDirectory = Path.GetDirectoryName(scriptFilePath);
-			var scriptRunner = Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.Create(
+			if(string.IsNullOrWhiteSpace(scriptFilePath))
+				throw new ArgumentException("scriptFilePath cannot be null or empty or whitespace");
+
+			string scriptFileFullPath = Path.GetFullPath(scriptFilePath);
+
+			//スクリプトファイルが存在するディレクトリ
+			string scriptFileDirectory = Path.GetDirectoryName(scriptFileFullPath); //空じゃないなら
+
+			return CreateActionFromScriptString(
 				scriptString,
 				UsingScriptOptions
+					.WithFilePath(scriptFileFullPath)
 					.WithSourceResolver(ScriptSourceResolver.Default.WithBaseDirectory(scriptFileDirectory))
 					.WithMetadataResolver(ScriptMetadataResolver.Default.WithBaseDirectory(scriptFileDirectory)),
+				IsDebug);
+		}
+		public static Func<GlobalVariable, Task>? CreateActionFromScriptString(in string scriptString, in ScriptOptions options, bool IsDebug)
+		{
+			//スクリプト自体は空ファイルを許容する
+			if (scriptString is null)
+				throw new ArgumentNullException("scriptString cannot be null");
+
+			var scriptRunner = Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.Create(
+				scriptString,
+				IsDebug ? //デバッグモードが有効であれば, デバッグ用の情報を含めてコンパイルする
+					options.WithEmitDebugInformation(true).WithOptimizationLevel(OptimizationLevel.Debug)
+					: options,
 				typeof(GlobalVariable));
 
-			var compileResult = scriptRunner.Compile(); //先にコンパイルを行う
+			//先にコンパイルを行う
+			var compileResult = scriptRunner.Compile();
 
 			//ログとして出力すべきだけど, 面倒なのでとりあえず保留
 			foreach (var result in compileResult)
