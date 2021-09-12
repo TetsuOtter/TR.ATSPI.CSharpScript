@@ -26,6 +26,7 @@ namespace TR.ATSPI.CSharpScript
 	{
 		[System.Xml.Serialization.XmlIgnore]
 		public string CurrentScriptFileListPath { get; set; } = string.Empty;
+		public bool? IsDebug { get; set; } = false;
 		public List<string> ScriptFileLists { get; set; } = new();
 		public List<string> LoadScripts { get; set; } = new();
 		public List<string> DisposeScripts { get; set; } = new();
