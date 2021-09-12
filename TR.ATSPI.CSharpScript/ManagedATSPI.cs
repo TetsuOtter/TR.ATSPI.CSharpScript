@@ -1,7 +1,5 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Scripting;
-using Microsoft.CodeAnalysis.Scripting.Hosting;
 
 using System;
 using System.Collections.Generic;
@@ -9,8 +7,6 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
-
-using System.Diagnostics;
 
 namespace TR.ATSPI.CSharpScript
 {
@@ -122,21 +118,39 @@ namespace TR.ATSPI.CSharpScript
 		{
 			ScriptPathListClass? listFile = null;
 
+			//スクリプトリストファイルを読み込む
 			using (StreamReader sr = new(path))
 				listFile = Serializer.Deserialize(sr) as ScriptPathListClass;
 
+			//スクリプトリストの読み込みに失敗した
 			if (listFile is null)
 				return;
 
-			listFile.CurrentScriptFileListPath = path;
+			//スクリプトリストファイル情報にスクリプトリストファイルへのフルパス (`..`や`.`を取り除いたもの) を記録する
+			listFile.CurrentScriptFileListPath = Path.GetFullPath(path);
+
+			//読み込み済みスクリプトリストファイルに追加する
 			ScriptFileLists.Add(listFile);
 
+			//これ以上スクリプトリストファイルを参照していないか確認する
 			if (listFile.ScriptFileLists is null || listFile.ScriptFileLists.Count <= 0)
 				return;
 
+			//スクリプトリストファイルを再帰的に読み込む
 			string directoryPath = Path.GetDirectoryName(path) ?? string.Empty;
 			foreach (var s in listFile.ScriptFileLists)
-				LoadScriptListFile(Path.IsPathRooted(s) ? s : Path.Combine(directoryPath, s));
+			{
+				//`..` や `.` を除いたパスを取得する
+				string nextListFilePath = Path.GetFullPath(Path.IsPathRooted(s) ? s : Path.Combine(directoryPath, s));
+
+				//既にファイルを読み込み済みでないか確認する
+				foreach (var list in ScriptFileLists)
+					if (Equals(list.CurrentScriptFileListPath, nextListFilePath))
+						continue;
+
+				//スクリプトリストファイルを読み込む (再帰的)
+				LoadScriptListFile(nextListFilePath);
+			}
 		}
 
 		private void LoadScriptsFromPathList(List<Func<GlobalVariable, Task>> targetList, Func<ScriptPathListClass, List<string>> pathListSelector)
@@ -158,7 +172,10 @@ namespace TR.ATSPI.CSharpScript
 					using (StreamReader sr = new(scriptFilePath))
 						scriptString = sr.ReadToEnd();
 
-					targetList.Add(CreateActionFromScriptString(scriptString, scriptFilePath));
+					var func = CreateActionFromScriptString(scriptString, scriptFilePath);
+
+					if (func is not null)
+						targetList.Add(func);
 				}
 			}
 		}
@@ -182,15 +199,28 @@ namespace TR.ATSPI.CSharpScript
 			LoadScriptsFromPathList(GetPluginVersionScripts, v => v.GetPluginVersionScripts);
 		}
 
-		public static Func<GlobalVariable, Task> CreateActionFromScriptString(in string scriptString, in string scriptFilePath = "")
+		public static Func<GlobalVariable, Task>? CreateActionFromScriptString(in string scriptString, in string scriptFilePath = "")
 		{
-			var scriptRunner = Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.Create(scriptString, UsingScriptOptions.WithSourceResolver(new MySourceReferenceResolver(scriptFilePath)).WithMetadataResolver(new MyMetadataReferenceResolver(scriptFilePath)), typeof(GlobalVariable));
+			string scriptFileDirectory = Path.GetDirectoryName(scriptFilePath);
+			var scriptRunner = Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.Create(
+				scriptString,
+				UsingScriptOptions
+					.WithSourceResolver(ScriptSourceResolver.Default.WithBaseDirectory(scriptFileDirectory))
+					.WithMetadataResolver(ScriptMetadataResolver.Default.WithBaseDirectory(scriptFileDirectory)),
+				typeof(GlobalVariable));
 
-			scriptRunner.Compile(); //先にコンパイルを行う
+			var compileResult = scriptRunner.Compile(); //先にコンパイルを行う
 
 			//ログとして出力すべきだけど, 面倒なのでとりあえず保留
+			foreach (var result in compileResult)
+				if (result.Severity == DiagnosticSeverity.Error)
+					return null; //エラーが返ったら実行しない
 
-			return (value) => scriptRunner.RunAsync(value);
+			var createdDelegate = scriptRunner.CreateDelegate();
+			if (createdDelegate is null)
+				return null;
+
+			return (globals) => createdDelegate.Invoke(globals);
 		}
 
 		private Task RunScripts(List<Func<GlobalVariable, Task>> funcs)
