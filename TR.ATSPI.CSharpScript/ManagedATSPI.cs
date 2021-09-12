@@ -217,7 +217,8 @@ namespace TR.ATSPI.CSharpScript
 			LoadScriptsFromPathList(GetPluginVersionScripts, v => v.GetPluginVersionScripts);
 		}
 
-		public static Func<GlobalVariable, Task>? CreateActionFromScriptString(in string scriptString, in string scriptFilePath = "")
+		public static Func<GlobalVariable, Task>? CreateActionFromScriptString(in string scriptString)
+			=> CreateActionFromScriptString(scriptString, UsingScriptOptions, false); //スクリプトを一時ファイルに書き出すのが面倒なので, ファイルパスなしでのデバッグはサポートしない
 		public static Func<GlobalVariable, Task>? CreateActionFromScriptString(in string scriptString, in string scriptFilePath, bool IsDebug = false)
 		{
 			if(string.IsNullOrWhiteSpace(scriptFilePath))
