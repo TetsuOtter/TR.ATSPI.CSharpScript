@@ -49,7 +49,10 @@ namespace TR.ATSPI.CSharpScript.Tests
 				return;
 
 			GlobalVariable gv = new();
+
+			//Debugger.Launchを処理するかどうかのフラグ (1で「処理する」)
 			gv.ReverserPosReturn = 1;
+
 			await func.Invoke(gv);
 
 			Assert.Pass();
