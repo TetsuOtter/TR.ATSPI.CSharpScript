@@ -3,7 +3,6 @@
     <TargetFramework>net48</TargetFramework>
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Label="8337224c9ad9e356:PreProc">
     <DebugType Condition="'$(DebugType)'!='full' And '$(DebugType)'!='pdbonly'" Label="8337224c9ad9e356:PreProc">pdbonly</DebugType>
@@ -11,7 +10,7 @@
   <PropertyGroup>
     <DllExportIdent>0D4DAE2F-BA65-4222-AEAA-CC8A0A5FFAC6</DllExportIdent>
     <DllExportMetaLibName>DllExport.dll</DllExportMetaLibName>
-    <DllExportNamespace>TR.ATSPI.CScript</DllExportNamespace>
+    <DllExportNamespace>TR.ATSPI.CSharpScript</DllExportNamespace>
     <DllExportDDNSCecil>true</DllExportDDNSCecil>
     <DllExportSkipOnAnyCpu>false</DllExportSkipOnAnyCpu>
     <DllExportPlatform>Auto</DllExportPlatform>
@@ -34,7 +33,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="3.11.0" />
   </ItemGroup>
-  <Target Name="DllExportPreProc" BeforeTargets="DllExportMod" Label="8337224c9ad9e356:PreProc">
+  <Target Name="DllExportPreProc" BeforeTargets="DllExportMod" Label="8337224c9ad9e356:PreProc" Condition="'$(Platform)' != 'AnyCPU'">
     <Copy SourceFiles="$(DllExportMetaLibFullPath)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
     <Exec Command="$(ILMergeConsolePath)  $(TargetFileName) /out:$(TargetFileName).ilm0.dll" WorkingDirectory="$(TargetDir)" ContinueOnError="true" />
     <Move SourceFiles="$(TargetDir)$(TargetFileName).ilm0.dll" DestinationFiles="$(TargetDir)$(TargetFileName)" OverwriteReadOnlyFiles="true" ContinueOnError="true" />

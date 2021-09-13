@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace TR.ATSPI.CScript
+namespace TR.ATSPI.CSharpScript
 {
 	public interface ISettings<T>
 	{
@@ -26,6 +26,7 @@ namespace TR.ATSPI.CScript
 	{
 		[System.Xml.Serialization.XmlIgnore]
 		public string CurrentScriptFileListPath { get; set; } = string.Empty;
+		public bool? IsDebug { get; set; } = false;
 		public List<string> ScriptFileLists { get; set; } = new();
 		public List<string> LoadScripts { get; set; } = new();
 		public List<string> DisposeScripts { get; set; } = new();

@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Scripting;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Scripting;
 
 using System;
@@ -8,9 +8,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 
-using System.Diagnostics;
-
-namespace TR.ATSPI.CScript
+namespace TR.ATSPI.CSharpScript
 {
 	public sealed class ManagedATSPI : IDisposable, ISettings<Func<GlobalVariable, Task>>
 	{
@@ -24,8 +22,26 @@ namespace TR.ATSPI.CScript
 			"System.Collections.Generic",
 			"System.Threading.Tasks"
 		};
+		static Assembly[] ScriptReferences { get; } = new Assembly[]
+		{
+			typeof(object).Assembly,
+			typeof(System.IO.File).Assembly,
+			typeof(System.Collections.Generic.Dictionary<object, object>).Assembly,
+			typeof(System.Threading.Tasks.Task).Assembly,
+			typeof(System.Diagnostics.Debugger).Assembly
+		};
 
-		static ScriptOptions UsingScriptOptions { get; } = ScriptOptions.Default.WithAllowUnsafe(true).WithImports(ScriptsImports);
+		static ScriptOptions UsingScriptOptions { get; }
+			= ScriptOptions.Default
+				.WithAllowUnsafe(true)
+				.WithFileEncoding(System.Text.Encoding.UTF8)
+				.WithImports(ScriptsImports)
+				.WithReferences(ScriptReferences)
+				.WithOptimizationLevel(OptimizationLevel.Release)
+				.WithEmitDebugInformation(false)
+				.WithSourceResolver(ScriptSourceResolver.Default.WithBaseDirectory(CurrentDllDirectoryPath))
+				.WithMetadataResolver(ScriptMetadataResolver.Default.WithBaseDirectory(CurrentDllDirectoryPath));
+
 		static XmlSerializer Serializer { get; } = new XmlSerializer(typeof(ScriptPathListClass));
 
 		public List<ScriptPathListClass> ScriptFileLists { get; } = new();
@@ -56,7 +72,7 @@ namespace TR.ATSPI.CScript
 		public bool LoadScriptPathListsAndScripts()
 		{
 			//設定ファイルを読み込む => XML
-			// C:\abcDef\TR.ATSPI.CScript.xml
+			// C:\abcDef\TR.ATSPI.CSharpScript.xml
 			string rootSettingFilePath = Path.Combine(CurrentDllDirectoryPath, CurrentDllFileNameWithoutExtension + ".xml");
 
 			//ルートとなる設定ファイルが存在する場合のみ, 読み込みを実行
@@ -120,21 +136,39 @@ namespace TR.ATSPI.CScript
 		{
 			ScriptPathListClass? listFile = null;
 
+			//スクリプトリストファイルを読み込む
 			using (StreamReader sr = new(path))
 				listFile = Serializer.Deserialize(sr) as ScriptPathListClass;
 
+			//スクリプトリストの読み込みに失敗した
 			if (listFile is null)
 				return;
 
-			listFile.CurrentScriptFileListPath = path;
+			//スクリプトリストファイル情報にスクリプトリストファイルへのフルパス (`..`や`.`を取り除いたもの) を記録する
+			listFile.CurrentScriptFileListPath = Path.GetFullPath(path);
+
+			//読み込み済みスクリプトリストファイルに追加する
 			ScriptFileLists.Add(listFile);
 
+			//これ以上スクリプトリストファイルを参照していないか確認する
 			if (listFile.ScriptFileLists is null || listFile.ScriptFileLists.Count <= 0)
 				return;
 
+			//スクリプトリストファイルを再帰的に読み込む
 			string directoryPath = Path.GetDirectoryName(path) ?? string.Empty;
 			foreach (var s in listFile.ScriptFileLists)
-				LoadScriptListFile(Path.IsPathRooted(s) ? s : Path.Combine(directoryPath, s));
+			{
+				//`..` や `.` を除いたパスを取得する
+				string nextListFilePath = Path.GetFullPath(Path.IsPathRooted(s) ? s : Path.Combine(directoryPath, s));
+
+				//既にファイルを読み込み済みでないか確認する
+				foreach (var list in ScriptFileLists)
+					if (Equals(list.CurrentScriptFileListPath, nextListFilePath))
+						continue;
+
+				//スクリプトリストファイルを読み込む (再帰的)
+				LoadScriptListFile(nextListFilePath);
+			}
 		}
 
 		private void LoadScriptsFromPathList(List<Func<GlobalVariable, Task>> targetList, Func<ScriptPathListClass, List<string>> pathListSelector)
@@ -150,12 +184,16 @@ namespace TR.ATSPI.CScript
 				{
 					//絶対パスに変換する
 					string scriptString = string.Empty;
+					string scriptFilePath = Path.IsPathRooted(s) ? s : Path.Combine(Path.GetDirectoryName(source.CurrentScriptFileListPath), s);
 
 					//相対パスは, スクリプトファイルリストからの相対パスとして絶対パスに変換する
-					using (StreamReader sr = new(Path.IsPathRooted(s) ? s : Path.Combine(Path.GetDirectoryName(source.CurrentScriptFileListPath), s)))
+					using (StreamReader sr = new(scriptFilePath))
 						scriptString = sr.ReadToEnd();
 
-					targetList.Add(CreateActionFromScriptString(scriptString));
+					var func = CreateActionFromScriptString(scriptString, scriptFilePath);
+
+					if (func is not null)
+						targetList.Add(func);
 				}
 			}
 		}
@@ -179,15 +217,52 @@ namespace TR.ATSPI.CScript
 			LoadScriptsFromPathList(GetPluginVersionScripts, v => v.GetPluginVersionScripts);
 		}
 
-		public static Func<GlobalVariable, Task> CreateActionFromScriptString(in string scriptString)
+		public static Func<GlobalVariable, Task>? CreateActionFromScriptString(in string scriptString)
+			=> CreateActionFromScriptString(scriptString, UsingScriptOptions, false); //スクリプトを一時ファイルに書き出すのが面倒なので, ファイルパスなしでのデバッグはサポートしない
+		public static Func<GlobalVariable, Task>? CreateActionFromScriptString(in string scriptString, in string scriptFilePath, bool IsDebug = false)
 		{
-			var scriptRunner = CSharpScript.Create(scriptString, UsingScriptOptions, typeof(GlobalVariable));
+			if(string.IsNullOrWhiteSpace(scriptFilePath))
+				throw new ArgumentException("scriptFilePath cannot be null or empty or whitespace");
 
-			scriptRunner.Compile(); //先にコンパイルを行う
+			string scriptFileFullPath = Path.GetFullPath(scriptFilePath);
+
+			//スクリプトファイルが存在するディレクトリ
+			string scriptFileDirectory = Path.GetDirectoryName(scriptFileFullPath); //空じゃないなら
+
+			return CreateActionFromScriptString(
+				scriptString,
+				UsingScriptOptions
+					.WithFilePath(scriptFileFullPath)
+					.WithSourceResolver(ScriptSourceResolver.Default.WithBaseDirectory(scriptFileDirectory))
+					.WithMetadataResolver(ScriptMetadataResolver.Default.WithBaseDirectory(scriptFileDirectory)),
+				IsDebug);
+		}
+		public static Func<GlobalVariable, Task>? CreateActionFromScriptString(in string scriptString, in ScriptOptions options, bool IsDebug)
+		{
+			//スクリプト自体は空ファイルを許容する
+			if (scriptString is null)
+				throw new ArgumentNullException("scriptString cannot be null");
+
+			var scriptRunner = Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.Create(
+				scriptString,
+				IsDebug ? //デバッグモードが有効であれば, デバッグ用の情報を含めてコンパイルする
+					options.WithEmitDebugInformation(true).WithOptimizationLevel(OptimizationLevel.Debug)
+					: options,
+				typeof(GlobalVariable));
+
+			//先にコンパイルを行う
+			var compileResult = scriptRunner.Compile();
 
 			//ログとして出力すべきだけど, 面倒なのでとりあえず保留
+			foreach (var result in compileResult)
+				if (result.Severity == DiagnosticSeverity.Error)
+					return null; //エラーが返ったら実行しない
 
-			return (value) => scriptRunner.RunAsync(value);
+			var createdDelegate = scriptRunner.CreateDelegate();
+			if (createdDelegate is null)
+				return null;
+
+			return (globals) => createdDelegate.Invoke(globals);
 		}
 
 		private Task RunScripts(List<Func<GlobalVariable, Task>> funcs)
